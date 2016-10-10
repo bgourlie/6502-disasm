@@ -66,15 +66,15 @@ export class Disassembler {
       case 0b1:
         return "zp";
       case 0b10:
-        throw "Invalid addressing byte for family 10.";
+        throw "Invalid addressing byte for family 00.";
       case 0b11:
         return "abs";
       case 0b100:
-        throw "Invalid addressing byte for family 10.";
+        throw "Invalid addressing byte for family 00.";
       case 0b101:
         return "zp,X";
       case 0b110:
-        throw "Invalid addressing byte for family 10.";
+        throw "Invalid addressing byte for family 00.";
       case 0b111:
         return "abs,X";
       default:
