@@ -103,7 +103,7 @@ export class Disassembler {
   private readonly bytes: Uint8Array;
   private readonly decodeTo: number;
 
-  private pc: number = 0;
+  private pc: number;
 
   constructor(bytes: Uint8Array, pcStart: number = 0, decodeTo?: number) {
     this.bytes = bytes;
