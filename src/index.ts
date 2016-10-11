@@ -1,3 +1,3 @@
-import { PackedRom } from "./packed_rom";
+import { Disassembler } from "./disassembler";
 
-export { PackedRom };
+export { Disassembler };

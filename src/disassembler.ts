@@ -3,83 +3,26 @@ export class Disassembler {
   private static readonly INSTR_MASK = 0b111;
   private static readonly ADDRESSING_MODE_MASK = 0b111;
 
-  private static readonly INSTR_LEN = [
-    1, 2, 0, 0, 0, 2, 2, 0, 1, 2, 1, 0, 0, 3, 3, 0, // 0x00
-    2, 2, 0, 0, 0, 2, 2, 0, 1, 3, 0, 0, 0, 3, 3, 0, // 0x10
-    3, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0, // 0x20
-    2, 2, 0, 0, 0, 2, 2, 0, 1, 3, 0, 0, 0, 3, 3, 0, // 0x30
-    1, 2, 0, 0, 0, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0, // 0x40
-    2, 2, 0, 0, 0, 2, 2, 0, 1, 3, 0, 0, 0, 3, 3, 0, // 0x50
-    1, 2, 0, 0, 0, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0, // 0x60
-    2, 2, 0, 0, 0, 2, 2, 0, 1, 3, 0, 0, 0, 3, 3, 0, // 0x70
-    0, 2, 0, 0, 2, 2, 2, 0, 1, 0, 1, 0, 3, 3, 3, 0, // 0x80
-    2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 0, 3, 0, 0, // 0x90
-    2, 2, 2, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0, // 0xA0
-    2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0, // 0xB0
-    2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0, // 0xC0
-    2, 2, 0, 0, 0, 2, 2, 0, 1, 3, 0, 0, 0, 3, 3, 0, // 0xD0
-    2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0, // 0xE0
-    2, 2, 0, 0, 0, 2, 2, 0, 1, 3, 0, 0, 0, 3, 3, 0, // 0xF0
-  ];
-
-  private readonly bytes: Uint8Array;
-  private readonly bytesLen: number;
-
-  private pc: number = 0;
-
-  constructor(bytes: Uint8Array) {
-    this.bytes = bytes;
-    this.bytesLen = bytes.length;
-  }
-
-  private static decodeFamily00Instruction(byte: number): string {
-    const instr = (byte >> 5) & Disassembler.INSTR_MASK;
-
-    switch (instr) {
-      case 0b0:
-        throw "Unexpected instruction byte for family 00";
-      case 0b1:
-        return "BIT";
-      case 0b10:
-        return "JMP";
-      case 0b11:
-        return "JMP";
-      case 0b100:
-        return "STY";
-      case 0b101:
-        return "LDY";
-      case 0b110:
-        return "CPY";
-      case 0b111:
-        return "CPX";
-      default:
-        throw `Non-exhaustive match on instruction: ${instr.toString(6)}`;
+  private static leftPad(value: string, size: number) {
+    if (value.length < size) {
+      let pad = "0";
+      size -= value.length;
+      let res = "";
+      while (true) {
+        /* tslint:disable:no-bitwise */
+        if (size & 1) {
+          res += pad;
+        }
+        size >>= 1;
+        if (size) {
+          pad += pad;
+        } else {
+          break;
+        }
+      }
+      return res + value;
     }
-  }
-
-  private static decodeFamily00AddressingMode(byte: number): string {
-    const am = (byte >> 2) & Disassembler.ADDRESSING_MODE_MASK;
-
-    switch(am) {
-      case 0b0:
-        return "#";
-      case 0b1:
-        return "zp";
-      case 0b10:
-        throw "Invalid addressing byte for family 00.";
-      case 0b11:
-        return "abs";
-      case 0b100:
-        throw "Invalid addressing byte for family 00.";
-      case 0b101:
-        return "zp,X";
-      case 0b110:
-        throw "Invalid addressing byte for family 00.";
-      case 0b111:
-        return "abs,X";
-      default:
-        throw `Non-exhaustive match on addressing mode: ${am.toString(6)}`;
-    }
+    return value;
   }
 
   private static decodeFamily01Instruction(byte: number): string {
@@ -103,32 +46,32 @@ export class Disassembler {
       case 0b111:
         return "SBC";
       default:
-        throw `Non-exhaustive match on instruction: ${instr.toString(6)}`
+        return "???";
     }
   }
 
-  private static decodeFamily01AddressingMode(byte: number): string {
-    const am = (byte >> 2) & Disassembler.ADDRESSING_MODE_MASK;
+  private static decodeFamily00Instruction(byte: number): string {
+    const instr = (byte >> 5) & Disassembler.INSTR_MASK;
 
-    switch(am) {
+    switch (instr) {
       case 0b0:
-        return "(zp,X)";
+        return "???";
       case 0b1:
-        return "zp";
+        return "BIT";
       case 0b10:
-        return "#";
+        return "JMP";
       case 0b11:
-        return "abs";
+        return "JMP";
       case 0b100:
-        return "(zp),Y";
+        return "STY";
       case 0b101:
-        return "zp,X";
+        return "LDY";
       case 0b110:
-        return "abs,Y";
+        return "CPY";
       case 0b111:
-        return "abs,X";
+        return "CPX";
       default:
-        throw `Non-exhaustive match on addressing mode: ${am.toString(6)}`;
+        return "???";
     }
   }
 
@@ -153,68 +96,36 @@ export class Disassembler {
       case 0b111:
         return "INC";
       default:
-        throw `Non-exhaustive match on instruction: ${instr.toString(6)}`
+        return "???";
     }
   }
 
-  private static decodeFamily10AddressingMode(byte: number): string {
-    const am = (byte >> 2) & Disassembler.ADDRESSING_MODE_MASK;
+  private readonly bytes: Uint8Array;
+  private readonly decodeTo: number;
 
-    switch(am) {
-      case 0b0:
-        return "#";
-      case 0b1:
-        return "zp";
-      case 0b10:
-        return "acc";
-      case 0b11:
-        return "abs";
-      case 0b100:
-        throw "Invalid addressing byte for family 10.";
-      case 0b101:
-        return "zp,X";
-      case 0b110:
-        throw "Invalid addressing byte for family 10.";
-      case 0b111:
-        return "abs,X";
-      default:
-        throw `Non-exhaustive match on addressing mode: ${am.toString(6)}`;
-    }
+  private pc: number = 0;
+
+  constructor(bytes: Uint8Array, pcStart: number = 0, decodeTo?: number) {
+    this.bytes = bytes;
+    this.pc = pcStart;
+    this.decodeTo = decodeTo ? decodeTo : bytes.length;
   }
 
   public decodeNext(): string {
-    if(this.pc >= this.bytesLen) {
-      throw `Program counter out-of-bounds: ${this.pc}.  Upper-bound is ${this.bytesLen - 1}`;
+    if (this.pc >= this.decodeTo) {
+      return ".END";
     }
 
     const byte = this.bytes[this.pc];
-    this.pc += Disassembler.INSTR_LEN[byte];
 
-    switch(byte) {
+    switch (byte) {
       case 0x0:
+        this.pc += 1; // BRK has a padding byte
         return "BRK";
-      case 0x10:
-        return "BPL";
-      case 0x20:
-        return "JSR abs";
-      case 0x30:
-        return "BMI";
       case 0x40:
         return "RTI";
-      case 0x50:
-        return "BVC";
       case 0x60:
         return "RTS";
-      case 0x70:
-        return "BVS";
-      case 0x90:
-        return "BCC";
-      case 0xb0:
-        return "BCS";
-      case 0xd0:
-        return "BNE";
-      case 0xf0:
-        return "BEQ";
       case 0x08:
         return "PHP";
       case 0x28:
@@ -259,20 +170,166 @@ export class Disassembler {
         return "DEX";
       case 0xea:
         return "NOP";
-    }
-
-    const instrFamily = byte & Disassembler.INSTR_FAMILY_MASK;
-
-    switch (instrFamily) {
-      case 0b01:
-        return Disassembler.decodeFamily01Instruction(byte) + " " + Disassembler.decodeFamily01AddressingMode(byte);
-      case 0b10:
-        return Disassembler.decodeFamily10Instruction(byte) + " " + Disassembler.decodeFamily10AddressingMode(byte);
-      case 0b00:
-        return Disassembler.decodeFamily00Instruction(byte) + " " + Disassembler.decodeFamily00AddressingMode(byte);
+      case 0x10:
+        return "BPL " + this.relative();
+      case 0x30:
+        return "BMI " + this.relative();
+      case 0x50:
+        return "BVC " + this.relative();
+      case 0x70:
+        return "BVS " + this.relative();
+      case 0x90:
+        return "BCC " + this.relative();
+      case 0xb0:
+        return "BCS " + this.relative();
+      case 0xd0:
+        return "BNE " + this.relative();
+      case 0xf0:
+        return "BEQ " + this.relative();
+      case 0x20:
+        return "JSR " + this.abs();
       default:
-        throw "Non-exhaustive match on instruction family."
+        const instrFamily = byte & Disassembler.INSTR_FAMILY_MASK;
+        let decoded: string;
+        switch (instrFamily) {
+          case 0b01:
+            decoded = Disassembler.decodeFamily01Instruction(byte) + " " + this.decodeFamily01AddressingMode(byte);
+            break;
+          case 0b10:
+            decoded = Disassembler.decodeFamily10Instruction(byte) + " " + this.decodeFamily10AddressingMode(byte);
+            break;
+          case 0b00:
+            decoded = Disassembler.decodeFamily00Instruction(byte) + " " + this.decodeFamily00AddressingMode(byte);
+            break;
+          default:
+            decoded = "???";
+        }
+        this.pc += 1;
+        return decoded;
+    }
+  }
+
+  private read8(): string {
+    this.pc += 1;
+    const val = this.bytes[this.pc];
+    return Disassembler.leftPad(val.toString(16), 2).toUpperCase();
+  }
+
+  private read16(): string {
+    const byte1 = this.bytes[this.pc + 1];
+    const byte2 = this.bytes[this.pc + 2];
+    this.pc += 2;
+    const val = byte1 | byte2 << 8;
+    return Disassembler.leftPad(val.toString(16), 4).toUpperCase();
+  }
+
+  private decodeFamily00AddressingMode(byte: number): string {
+    const am = (byte >> 2) & Disassembler.ADDRESSING_MODE_MASK;
+
+    switch (am) {
+      case 0b0:
+        return this.immediate();
+      case 0b1:
+        return this.zp();
+      case 0b10:
+        return "???";
+      case 0b11:
+        return this.abs();
+      case 0b100:
+        return "???";
+      case 0b101:
+        return this.zpX();
+      case 0b110:
+        return "???";
+      case 0b111:
+        return this.absX();
+      default:
+        return "???";
+    }
+  }
+
+  private indexedIndirect(): string {
+    return `(\$${this.read8()},X)`;
+  }
+
+  private indirectIndexed(): string {
+    return `(\$${this.read8()}),Y`;
+  }
+
+  private zp(): string {
+    return `\$${this.read8()}`;
+  }
+
+  private immediate(): string {
+    return `#\$${this.read8()}`;
+  }
+
+  private abs(): string {
+    return `\$${this.read16()}`;
+  }
+
+  private zpX(): string {
+    return `\$${this.read8()},X`;
+  }
+
+  private absY(): string {
+    return `\$${this.read16()},Y`;
+  }
+
+  private absX(): string {
+    return `\$${this.read16()},X`;
+  }
+
+  private relative(): string {
+    return `\$${this.read8()}`;
+  }
+
+  private decodeFamily01AddressingMode(byte: number): string {
+    const am = (byte >> 2) & Disassembler.ADDRESSING_MODE_MASK;
+    switch (am) {
+      case 0b0:
+        return this.indexedIndirect();
+      case 0b1:
+        return this.zp();
+      case 0b10:
+        return this.immediate();
+      case 0b11:
+        return this.abs();
+      case 0b100:
+        return this.indirectIndexed();
+      case 0b101:
+        return this.zpX();
+      case 0b110:
+        return this.absY();
+      case 0b111:
+        return this.absX();
+      default:
+        return "???";
+    }
+  }
+
+  private decodeFamily10AddressingMode(byte: number): string {
+    const am = (byte >> 2) & Disassembler.ADDRESSING_MODE_MASK;
+
+    switch (am) {
+      case 0b0:
+        return this.immediate();
+      case 0b1:
+        return this.zp();
+      case 0b10:
+        return "A";
+      case 0b11:
+        return this.abs();
+      case 0b100:
+        return "???";
+      case 0b101:
+        return this.zpX();
+      case 0b110:
+        return "???";
+      case 0b111:
+        return this.absX();
+      default:
+        return "???";
     }
   }
 }
-
