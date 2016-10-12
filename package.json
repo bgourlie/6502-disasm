@@ -1,12 +1,13 @@
 {
   "name": "6502-disasm",
-  "version": "0.0.0",
+  "version": "0.1",
   "description": "6502-disasm",
   "license": "MIT",
-  "repository": "",
-  "author": "",
+  "repository": "https://github.com/bgourlie/6502-disasm",
+  "author": "W. Brian Gourlie",
   "keywords": [
-    ""
+    "6502",
+    "Disassembler"
   ],
   "files": [
     "lib"
