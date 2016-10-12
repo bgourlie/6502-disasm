@@ -117,6 +117,7 @@ export class Disassembler {
     }
 
     const byte = this.bytes[this.pc];
+    this.pc += 1;
 
     switch (byte) {
       case 0x0:
@@ -190,34 +191,28 @@ export class Disassembler {
         return "JSR " + this.abs();
       default:
         const instrFamily = byte & Disassembler.INSTR_FAMILY_MASK;
-        let decoded: string;
         switch (instrFamily) {
           case 0b01:
-            decoded = Disassembler.decodeFamily01Instruction(byte) + " " + this.decodeFamily01AddressingMode(byte);
-            break;
+            return Disassembler.decodeFamily01Instruction(byte) + " " + this.decodeFamily01AddressingMode(byte);
           case 0b10:
-            decoded = Disassembler.decodeFamily10Instruction(byte) + " " + this.decodeFamily10AddressingMode(byte);
-            break;
+            return Disassembler.decodeFamily10Instruction(byte) + " " + this.decodeFamily10AddressingMode(byte);
           case 0b00:
-            decoded = Disassembler.decodeFamily00Instruction(byte) + " " + this.decodeFamily00AddressingMode(byte);
-            break;
+            return Disassembler.decodeFamily00Instruction(byte) + " " + this.decodeFamily00AddressingMode(byte);
           default:
-            decoded = "???";
+            return "???";
         }
-        this.pc += 1;
-        return decoded;
     }
   }
 
   private read8(): string {
-    this.pc += 1;
     const val = this.bytes[this.pc];
+    this.pc += 1;
     return Disassembler.leftPad(val.toString(16), 2).toUpperCase();
   }
 
   private read16(): string {
-    const byte1 = this.bytes[this.pc + 1];
-    const byte2 = this.bytes[this.pc + 2];
+    const byte1 = this.bytes[this.pc];
+    const byte2 = this.bytes[this.pc + 1];
     this.pc += 2;
     const val = byte1 | byte2 << 8;
     return Disassembler.leftPad(val.toString(16), 4).toUpperCase();
