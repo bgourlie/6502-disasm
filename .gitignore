@@ -6,3 +6,4 @@ npm-debug.log
 lib
 src/*.js
 test/*.js
+typings

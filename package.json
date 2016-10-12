@@ -1,6 +1,6 @@
 {
   "name": "6502-disasm",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "6502-disasm",
   "license": "MIT",
   "repository": "https://github.com/bgourlie/6502-disasm",

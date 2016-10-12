@@ -1,3 +1,11 @@
+class State {
+  public pc: number;
+
+  constructor(pc: number) {
+    this.pc = pc;
+  }
+}
+
 export class Disassembler {
   private static readonly INSTR_FAMILY_MASK = 0b11;
   private static readonly INSTR_MASK = 0b111;
@@ -101,228 +109,268 @@ export class Disassembler {
   }
 
   private readonly bytes: Uint8Array;
-  private readonly decodeTo: number;
 
-  private pc: number;
-
-  constructor(bytes: Uint8Array, pcStart: number = 0, decodeTo?: number) {
+  constructor(bytes: Uint8Array) {
     this.bytes = bytes;
-    this.pc = pcStart;
-    this.decodeTo = decodeTo ? decodeTo : bytes.length;
   }
 
-  public decodeNext(): string {
-    if (this.pc >= this.decodeTo) {
-      return ".END";
-    }
+  public* iterator(start: number = 0, end?: number): IterableIterator<string> {
+    const state = new State(start);
+    const decodeTo = end ? end : this.bytes.length;
 
-    const byte = this.bytes[this.pc];
-    this.pc += 1;
+    while (state.pc < decodeTo) {
+      if (state.pc >= decodeTo) {
+        yield ".END";
+      }
+      const byte = this.bytes[state.pc];
+      state.pc += 1;
 
-    switch (byte) {
-      case 0x0:
-        this.pc += 1; // BRK has a padding byte
-        return "BRK";
-      case 0x40:
-        return "RTI";
-      case 0x60:
-        return "RTS";
-      case 0x08:
-        return "PHP";
-      case 0x28:
-        return "PLP";
-      case 0x48:
-        return "PHA";
-      case 0x68:
-        return "PLA";
-      case 0x88:
-        return "DEY";
-      case 0xa8:
-        return "TAY";
-      case 0xc8:
-        return "INY";
-      case 0xe8:
-        return "INX";
-      case 0x18:
-        return "CLC";
-      case 0x38:
-        return "SEC";
-      case 0x58:
-        return "CLI";
-      case 0x78:
-        return "SEI";
-      case 0x98:
-        return "TYA";
-      case 0xb8:
-        return "CLV";
-      case 0xd8:
-        return "CLD";
-      case 0xf8:
-        return "SED";
-      case 0x8a:
-        return "TXA";
-      case 0x9a:
-        return "TXS";
-      case 0xaa:
-        return "TAX";
-      case 0xba:
-        return "TSX";
-      case 0xca:
-        return "DEX";
-      case 0xea:
-        return "NOP";
-      case 0x10:
-        return "BPL " + this.relative();
-      case 0x30:
-        return "BMI " + this.relative();
-      case 0x50:
-        return "BVC " + this.relative();
-      case 0x70:
-        return "BVS " + this.relative();
-      case 0x90:
-        return "BCC " + this.relative();
-      case 0xb0:
-        return "BCS " + this.relative();
-      case 0xd0:
-        return "BNE " + this.relative();
-      case 0xf0:
-        return "BEQ " + this.relative();
-      case 0x20:
-        return "JSR " + this.abs();
-      default:
-        const instrFamily = byte & Disassembler.INSTR_FAMILY_MASK;
-        switch (instrFamily) {
-          case 0b01:
-            return Disassembler.decodeFamily01Instruction(byte) + " " + this.decodeFamily01AddressingMode(byte);
-          case 0b10:
-            return Disassembler.decodeFamily10Instruction(byte) + " " + this.decodeFamily10AddressingMode(byte);
-          case 0b00:
-            return Disassembler.decodeFamily00Instruction(byte) + " " + this.decodeFamily00AddressingMode(byte);
-          default:
-            return "???";
-        }
+      switch (byte) {
+        case 0x0:
+          state.pc += 1; // BRK has a padding byte
+          yield "BRK";
+          break;
+        case 0x40:
+          yield "RTI";
+          break;
+        case 0x60:
+          yield "RTS";
+          break;
+        case 0x08:
+          yield "PHP";
+          break;
+        case 0x28:
+          yield "PLP";
+          break;
+        case 0x48:
+          yield "PHA";
+          break;
+        case 0x68:
+          yield "PLA";
+          break;
+        case 0x88:
+          yield "DEY";
+          break;
+        case 0xa8:
+          yield "TAY";
+          break;
+        case 0xc8:
+          yield "INY";
+          break;
+        case 0xe8:
+          yield "INX";
+          break;
+        case 0x18:
+          yield "CLC";
+          break;
+        case 0x38:
+          yield "SEC";
+          break;
+        case 0x58:
+          yield "CLI";
+          break;
+        case 0x78:
+          yield "SEI";
+          break;
+        case 0x98:
+          yield "TYA";
+          break;
+        case 0xb8:
+          yield "CLV";
+          break;
+        case 0xd8:
+          yield "CLD";
+          break;
+        case 0xf8:
+          yield "SED";
+          break;
+        case 0x8a:
+          yield "TXA";
+          break;
+        case 0x9a:
+          yield "TXS";
+          break;
+        case 0xaa:
+          yield "TAX";
+          break;
+        case 0xba:
+          yield "TSX";
+          break;
+        case 0xca:
+          yield "DEX";
+          break;
+        case 0xea:
+          yield "NOP";
+          break;
+        case 0x10:
+          yield "BPL " + this.relative(state);
+          break;
+        case 0x30:
+          yield "BMI " + this.relative(state);
+          break;
+        case 0x50:
+          yield "BVC " + this.relative(state);
+          break;
+        case 0x70:
+          yield "BVS " + this.relative(state);
+          break;
+        case 0x90:
+          yield "BCC " + this.relative(state);
+          break;
+        case 0xb0:
+          yield "BCS " + this.relative(state);
+          break;
+        case 0xd0:
+          yield "BNE " + this.relative(state);
+          break;
+        case 0xf0:
+          yield "BEQ " + this.relative(state);
+          break;
+        case 0x20:
+          yield "JSR " + this.abs(state);
+          break;
+        default:
+          const instrFamily = byte & Disassembler.INSTR_FAMILY_MASK;
+          switch (instrFamily) {
+            case 0b01:
+              yield Disassembler.decodeFamily01Instruction(byte) + " "
+              + this.decodeFamily01AddressingMode(byte, state);
+              break;
+            case 0b10:
+              yield Disassembler.decodeFamily10Instruction(byte) + " "
+              + this.decodeFamily10AddressingMode(byte, state);
+              break;
+            case 0b00:
+              yield Disassembler.decodeFamily00Instruction(byte) + " "
+              + this.decodeFamily00AddressingMode(byte, state);
+              break;
+            default:
+              yield "???";
+              break;
+          }
+      }
     }
   }
 
-  private read8(): string {
-    const val = this.bytes[this.pc];
-    this.pc += 1;
+  private read8(state: State): string {
+    const val = this.bytes[state.pc];
+    state.pc += 1;
     return Disassembler.leftPad(val.toString(16), 2).toUpperCase();
   }
 
-  private read16(): string {
-    const byte1 = this.bytes[this.pc];
-    const byte2 = this.bytes[this.pc + 1];
-    this.pc += 2;
+  private read16(state: State): string {
+    const byte1 = this.bytes[state.pc];
+    const byte2 = this.bytes[state.pc + 1];
+    state.pc += 2;
     const val = byte1 | byte2 << 8;
     return Disassembler.leftPad(val.toString(16), 4).toUpperCase();
   }
 
-  private decodeFamily00AddressingMode(byte: number): string {
+  private decodeFamily00AddressingMode(byte: number, state: State): string {
     const am = (byte >> 2) & Disassembler.ADDRESSING_MODE_MASK;
 
     switch (am) {
       case 0b0:
-        return this.immediate();
+        return this.immediate(state);
       case 0b1:
-        return this.zp();
+        return this.zp(state);
       case 0b10:
         return "???";
       case 0b11:
-        return this.abs();
+        return this.abs(state);
       case 0b100:
         return "???";
       case 0b101:
-        return this.zpX();
+        return this.zpX(state);
       case 0b110:
         return "???";
       case 0b111:
-        return this.absX();
+        return this.absX(state);
       default:
         return "???";
     }
   }
 
-  private indexedIndirect(): string {
-    return `(\$${this.read8()},X)`;
+  private indexedIndirect(state: State): string {
+    return `(\$${this.read8(state)},X)`;
   }
 
-  private indirectIndexed(): string {
-    return `(\$${this.read8()}),Y`;
+  private indirectIndexed(state: State): string {
+    return `(\$${this.read8(state)}),Y`;
   }
 
-  private zp(): string {
-    return `\$${this.read8()}`;
+  private zp(state: State): string {
+    return `\$${this.read8(state)}`;
   }
 
-  private immediate(): string {
-    return `#\$${this.read8()}`;
+  private immediate(state: State): string {
+    return `#\$${this.read8(state)}`;
   }
 
-  private abs(): string {
-    return `\$${this.read16()}`;
+  private abs(state: State): string {
+    return `\$${this.read16(state)}`;
   }
 
-  private zpX(): string {
-    return `\$${this.read8()},X`;
+  private zpX(state: State): string {
+    return `\$${this.read8(state)},X`;
   }
 
-  private absY(): string {
-    return `\$${this.read16()},Y`;
+  private absY(state: State): string {
+    return `\$${this.read16(state)},Y`;
   }
 
-  private absX(): string {
-    return `\$${this.read16()},X`;
+  private absX(state: State): string {
+    return `\$${this.read16(state)},X`;
   }
 
-  private relative(): string {
-    return `\$${this.read8()}`;
+  private relative(state: State): string {
+    return `\$${this.read8(state)}`;
   }
 
-  private decodeFamily01AddressingMode(byte: number): string {
+  private decodeFamily01AddressingMode(byte: number, state: State): string {
     const am = (byte >> 2) & Disassembler.ADDRESSING_MODE_MASK;
     switch (am) {
       case 0b0:
-        return this.indexedIndirect();
+        return this.indexedIndirect(state);
       case 0b1:
-        return this.zp();
+        return this.zp(state);
       case 0b10:
-        return this.immediate();
+        return this.immediate(state);
       case 0b11:
-        return this.abs();
+        return this.abs(state);
       case 0b100:
-        return this.indirectIndexed();
+        return this.indirectIndexed(state);
       case 0b101:
-        return this.zpX();
+        return this.zpX(state);
       case 0b110:
-        return this.absY();
+        return this.absY(state);
       case 0b111:
-        return this.absX();
+        return this.absX(state);
       default:
         return "???";
     }
   }
 
-  private decodeFamily10AddressingMode(byte: number): string {
+  private decodeFamily10AddressingMode(byte: number, state: State): string {
     const am = (byte >> 2) & Disassembler.ADDRESSING_MODE_MASK;
 
     switch (am) {
       case 0b0:
-        return this.immediate();
+        return this.immediate(state);
       case 0b1:
-        return this.zp();
+        return this.zp(state);
       case 0b10:
         return "A";
       case 0b11:
-        return this.abs();
+        return this.abs(state);
       case 0b100:
         return "???";
       case 0b101:
-        return this.zpX();
+        return this.zpX(state);
       case 0b110:
         return "???";
       case 0b111:
-        return this.absX();
+        return this.absX(state);
       default:
         return "???";
     }
