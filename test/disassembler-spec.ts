@@ -16,14 +16,14 @@ describe("disassembler", () => {
       0x7d, 0x00, 0x00, /* ADC abs,X */
     ];
 
-    const iterator = new Disassembler(Uint8Array.from(adcRom)).iterator();
-    expect(iterator.next().value).to.equal("ADC ($00,X)");
-    expect(iterator.next().value).to.equal("ADC $00");
-    expect(iterator.next().value).to.equal("ADC #$00");
-    expect(iterator.next().value).to.equal("ADC $F00F");
-    expect(iterator.next().value).to.equal("ADC ($00),Y");
-    expect(iterator.next().value).to.equal("ADC $00,X");
-    expect(iterator.next().value).to.equal("ADC $0000,Y");
-    expect(iterator.next().value).to.equal("ADC $0000,X");
+    const decoded = new Disassembler(Uint8Array.from(adcRom)).decode();
+    expect(decoded[0]).to.equal("ADC ($00,X)");
+    expect(decoded[1]).to.equal("ADC $00");
+    expect(decoded[2]).to.equal("ADC #$00");
+    expect(decoded[3]).to.equal("ADC $F00F");
+    expect(decoded[4]).to.equal("ADC ($00),Y");
+    expect(decoded[5]).to.equal("ADC $00,X");
+    expect(decoded[6]).to.equal("ADC $0000,Y");
+    expect(decoded[7]).to.equal("ADC $0000,X");
   });
 });

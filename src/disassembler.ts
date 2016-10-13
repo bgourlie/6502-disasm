@@ -114,13 +114,14 @@ export class Disassembler {
     this.bytes = bytes;
   }
 
-  public* iterator(start: number = 0, end?: number): IterableIterator<string> {
+  public decode(start: number = 0, end?: number): string[] {
     const state = new State(start);
     const decodeTo = end ? end : this.bytes.length;
+    const ret: string[] = [];
 
     while (state.pc < decodeTo) {
       if (state.pc >= decodeTo) {
-        yield ".END";
+        ret.push(".END");
       }
       const byte = this.bytes[state.pc];
       state.pc += 1;
@@ -128,128 +129,129 @@ export class Disassembler {
       switch (byte) {
         case 0x0:
           state.pc += 1; // BRK has a padding byte
-          yield "BRK";
+          ret.push("BRK");
           break;
         case 0x40:
-          yield "RTI";
+          ret.push("RTI");
           break;
         case 0x60:
-          yield "RTS";
+          ret.push("RTS");
           break;
         case 0x08:
-          yield "PHP";
+          ret.push("PHP");
           break;
         case 0x28:
-          yield "PLP";
+          ret.push("PLP");
           break;
         case 0x48:
-          yield "PHA";
+          ret.push("PHA");
           break;
         case 0x68:
-          yield "PLA";
+          ret.push("PLA");
           break;
         case 0x88:
-          yield "DEY";
+          ret.push("DEY");
           break;
         case 0xa8:
-          yield "TAY";
+          ret.push("TAY");
           break;
         case 0xc8:
-          yield "INY";
+          ret.push("INY");
           break;
         case 0xe8:
-          yield "INX";
+          ret.push("INX");
           break;
         case 0x18:
-          yield "CLC";
+          ret.push("CLC");
           break;
         case 0x38:
-          yield "SEC";
+          ret.push("SEC");
           break;
         case 0x58:
-          yield "CLI";
+          ret.push("CLI");
           break;
         case 0x78:
-          yield "SEI";
+          ret.push("SEI");
           break;
         case 0x98:
-          yield "TYA";
+          ret.push("TYA");
           break;
         case 0xb8:
-          yield "CLV";
+          ret.push("CLV");
           break;
         case 0xd8:
-          yield "CLD";
+          ret.push("CLD");
           break;
         case 0xf8:
-          yield "SED";
+          ret.push("SED");
           break;
         case 0x8a:
-          yield "TXA";
+          ret.push("TXA");
           break;
         case 0x9a:
-          yield "TXS";
+          ret.push("TXS");
           break;
         case 0xaa:
-          yield "TAX";
+          ret.push("TAX");
           break;
         case 0xba:
-          yield "TSX";
+          ret.push("TSX");
           break;
         case 0xca:
-          yield "DEX";
+          ret.push("DEX");
           break;
         case 0xea:
-          yield "NOP";
+          ret.push("NOP");
           break;
         case 0x10:
-          yield "BPL " + this.relative(state);
+          ret.push("BPL " + this.relative(state));
           break;
         case 0x30:
-          yield "BMI " + this.relative(state);
+          ret.push("BMI " + this.relative(state));
           break;
         case 0x50:
-          yield "BVC " + this.relative(state);
+          ret.push("BVC " + this.relative(state));
           break;
         case 0x70:
-          yield "BVS " + this.relative(state);
+          ret.push("BVS " + this.relative(state));
           break;
         case 0x90:
-          yield "BCC " + this.relative(state);
+          ret.push("BCC " + this.relative(state));
           break;
         case 0xb0:
-          yield "BCS " + this.relative(state);
+          ret.push("BCS " + this.relative(state));
           break;
         case 0xd0:
-          yield "BNE " + this.relative(state);
+          ret.push("BNE " + this.relative(state));
           break;
         case 0xf0:
-          yield "BEQ " + this.relative(state);
+          ret.push("BEQ " + this.relative(state));
           break;
         case 0x20:
-          yield "JSR " + this.abs(state);
+          ret.push("JSR " + this.abs(state));
           break;
         default:
           const instrFamily = byte & Disassembler.INSTR_FAMILY_MASK;
           switch (instrFamily) {
             case 0b01:
-              yield Disassembler.decodeFamily01Instruction(byte) + " "
-              + this.decodeFamily01AddressingMode(byte, state);
+              ret.push(Disassembler.decodeFamily01Instruction(byte) + " "
+                + this.decodeFamily01AddressingMode(byte, state));
               break;
             case 0b10:
-              yield Disassembler.decodeFamily10Instruction(byte) + " "
-              + this.decodeFamily10AddressingMode(byte, state);
+              ret.push(Disassembler.decodeFamily10Instruction(byte) + " "
+                + this.decodeFamily10AddressingMode(byte, state));
               break;
             case 0b00:
-              yield Disassembler.decodeFamily00Instruction(byte) + " "
-              + this.decodeFamily00AddressingMode(byte, state);
+              ret.push(Disassembler.decodeFamily00Instruction(byte) + " "
+                + this.decodeFamily00AddressingMode(byte, state));
               break;
             default:
-              yield "???";
+              ret.push("???");
               break;
           }
       }
     }
+    return ret;
   }
 
   private read8(state: State): string {
