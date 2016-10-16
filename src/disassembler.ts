@@ -1,8 +1,26 @@
 class State {
   public pc: number;
+  public readonly decodeTo: number;
 
-  constructor(pc: number) {
+  constructor(pc: number, decodeTo: number) {
     this.pc = pc;
+    this.decodeTo = decodeTo;
+  }
+
+  public incPc8(): boolean {
+    if (this.pc < this.decodeTo) {
+      this.pc += 1;
+      return true;
+    }
+    return false;
+  }
+
+  public incPc16(): boolean {
+    if (this.pc < this.decodeTo - 1) {
+      this.pc += 2;
+      return true;
+    }
+    return false;
   }
 }
 
@@ -115,21 +133,23 @@ export class Disassembler {
   }
 
   public decode(start: number = 0, end?: number): string[] {
-    const state = new State(start);
-    const decodeTo = end ? end : this.bytes.length;
+    const decodeTo = end
+      ? end > this.bytes.length ? this.bytes.length : end
+      : this.bytes.length;
+
+    const state = new State(start, decodeTo);
     const ret: string[] = [];
 
-    while (state.pc < decodeTo) {
-      if (state.pc >= decodeTo) {
-        ret.push(".END");
-      }
+    while (state.pc < decodeTo - 1) {
       const byte = this.bytes[state.pc];
-      state.pc += 1;
+      state.pc += 1; // No need for incPc8 because we no it's safe to inc at this point
 
       switch (byte) {
         case 0x0:
-          state.pc += 1; // BRK has a padding byte
           ret.push("BRK");
+          if (!state.incPc8()) {
+            break;
+          }
           break;
         case 0x40:
           ret.push("RTI");
@@ -251,21 +271,26 @@ export class Disassembler {
           }
       }
     }
+    ret.push(".END");
     return ret;
   }
 
   private read8(state: State): string {
-    const val = this.bytes[state.pc];
-    state.pc += 1;
-    return Disassembler.leftPad(val.toString(16), 2).toUpperCase();
+    if (state.incPc8()) {
+      const val = this.bytes[state.pc - 1];
+      return Disassembler.leftPad(val.toString(16), 2).toUpperCase();
+    }
+    return "END";
   }
 
   private read16(state: State): string {
-    const byte1 = this.bytes[state.pc];
-    const byte2 = this.bytes[state.pc + 1];
-    state.pc += 2;
-    const val = byte1 | byte2 << 8;
-    return Disassembler.leftPad(val.toString(16), 4).toUpperCase();
+    if (state.incPc16()) {
+      const byte1 = this.bytes[state.pc - 2];
+      const byte2 = this.bytes[state.pc - 1];
+      const val = byte1 | byte2 << 8;
+      return Disassembler.leftPad(val.toString(16), 4).toUpperCase();
+    }
+    return "END";
   }
 
   private decodeFamily00AddressingMode(byte: number, state: State): string {
