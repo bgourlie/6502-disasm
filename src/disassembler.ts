@@ -271,7 +271,6 @@ export class Disassembler {
           }
       }
     }
-    ret.push(".END");
     return ret;
   }
 
