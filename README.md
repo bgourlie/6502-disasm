@@ -4,5 +4,5 @@ A 6502 disassembler written in TypeScript.
 ### Usage
 
     const d = require("6502-disasm");
-    const disasm = new d.Disassembler([0x61, 0xFA]);
-    disasm.decodeNext(); // Outputs "ADC ($00,X)"
+    const disasm = new d.Disassembler(new Uint8Array([0x61, 0xFA]));
+    disasm.decode(); // Outputs [ 'ADC ($FA,X)' ]
